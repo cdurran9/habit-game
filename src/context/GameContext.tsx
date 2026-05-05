@@ -77,6 +77,8 @@ interface GameContextValue {
   devMode: boolean
   setDevMode: (v: boolean) => void
   signOut: () => Promise<void>
+  shakeVersion: number
+  triggerShake: () => void
 }
 
 const GameContext = createContext<GameContextValue | null>(null)
@@ -87,6 +89,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [appLoading, setAppLoading] = useState(true)
   const [xpQueue, setXpQueue] = useState<XpGainEvent[]>([])
   const [devMode, setDevMode] = useState(false)
+  const [shakeVersion, setShakeVersion] = useState(0)
+  const triggerShake = useCallback(() => setShakeVersion(v => v + 1), [])
 
   // ── Auth + initial data load ─────────────────────────────────────────────
 
@@ -193,7 +197,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <GameContext.Provider value={{ data, dispatch: syncDispatch, session, appLoading, xpQueue, dequeueXp, completeHabit, isCompletedToday, devMode, setDevMode, signOut }}>
+    <GameContext.Provider value={{ data, dispatch: syncDispatch, session, appLoading, xpQueue, dequeueXp, completeHabit, isCompletedToday, devMode, setDevMode, signOut, shakeVersion, triggerShake }}>
       {children}
     </GameContext.Provider>
   )

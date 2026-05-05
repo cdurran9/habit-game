@@ -10,28 +10,20 @@ import { AnimatedCount } from './AnimatedCount'
 type Phase = 'idle' | 'showing' | 'done'
 
 export function AnimationOrchestrator() {
-  const { xpQueue, dequeueXp, data } = useGame()
+  const { xpQueue, dequeueXp, data, triggerShake } = useGame()
   const [phase, setPhase] = useState<Phase>('idle')
   const [currentEvent, setCurrentEvent] = useState(xpQueue[0] ?? null)
-  const [shaking, setShaking] = useState(false)
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>()
 
   useEffect(() => {
     if (phase === 'idle' && xpQueue.length > 0) {
       setCurrentEvent(xpQueue[0])
       setPhase('showing')
-
-      if (xpQueue[0].didLevelUp) {
-        setShaking(true)
-        setTimeout(() => setShaking(false), 500)
-      }
-
+      if (xpQueue[0].didLevelUp) triggerShake()
       clearTimeout(timeoutRef.current)
-      timeoutRef.current = setTimeout(() => {
-        setPhase('done')
-      }, 1800)
+      timeoutRef.current = setTimeout(() => setPhase('done'), 1800)
     }
-  }, [xpQueue, phase])
+  }, [xpQueue, phase, triggerShake])
 
   useEffect(() => {
     if (phase === 'done') {
@@ -52,15 +44,6 @@ export function AnimationOrchestrator() {
 
   return (
     <>
-      {/* Screen shake overlay */}
-      {shaking && (
-        <motion.div
-          className="fixed inset-0 pointer-events-none z-40"
-          animate={{ x: [0, -8, 8, -6, 6, -3, 3, 0], y: [0, 4, -4, 3, -3, 0] }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-        />
-      )}
-
       {/* Particle burst */}
       {currentEvent.didLevelUp && (
         <LevelUpBurst color={stat.color} active={phase === 'showing'} />
