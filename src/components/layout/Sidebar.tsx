@@ -3,7 +3,7 @@ import { useGame } from '../../context/GameContext'
 import { StatMiniature } from './StatMiniature'
 
 export function Sidebar() {
-  const { data, xpQueue, devMode } = useGame()
+  const { data, xpQueue, devMode, signOut } = useGame()
 
   const totalLevel = data.stats.reduce((sum, s) => sum + s.level, 0)
   const animatingStatId = xpQueue[0]?.statId ?? null
@@ -37,12 +37,20 @@ export function Sidebar() {
       </nav>
 
       {/* Stats */}
-      <div className="flex flex-col gap-1 flex-1">
+      <div className="flex flex-col gap-1 flex-1 min-h-0">
         <div className="text-white/30 text-xs font-semibold uppercase tracking-wider px-2 mb-1">Stats</div>
         {[...data.stats].sort((a, b) => a.order - b.order).map(stat => (
           <StatMiniature key={stat.id} stat={stat} isAnimating={animatingStatId === stat.id} />
         ))}
       </div>
+
+      {/* Sign out */}
+      <button
+        onClick={signOut}
+        className="text-white/25 hover:text-white/50 text-xs text-left px-2 py-1 transition-colors"
+      >
+        Sign out
+      </button>
     </aside>
   )
 }

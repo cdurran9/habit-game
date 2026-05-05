@@ -1,34 +1,37 @@
 import { createContext, useContext, useReducer, useEffect, useState, useCallback, type ReactNode } from 'react'
+import type { Session } from '@supabase/supabase-js'
 import type { AppData, Habit, Stat, LogEntry, XpGainEvent } from '../types'
-import { loadData, saveData } from '../lib/storage'
+import { supabase } from '../lib/supabase'
+import { loadUserData, upsertStat, insertHabit, updateHabit, deleteHabit, insertLog, updateCharacterName } from '../lib/db'
 import { levelFromXp } from '../lib/xp'
 import { uuid } from '../lib/uuid'
 import { XP_PER_COMPLETION } from '../constants/defaults'
 import { todayString } from '../lib/date'
 
+// ── Reducer ────────────────────────────────────────────────────────────────
+
 type Action =
+  | { type: 'LOAD_DATA'; data: AppData }
   | { type: 'ADD_HABIT'; habit: Habit }
   | { type: 'UPDATE_HABIT'; habit: Habit }
-  | { type: 'ARCHIVE_HABIT'; id: string }
   | { type: 'DELETE_HABIT'; id: string }
   | { type: 'UPDATE_STAT'; stat: Stat }
   | { type: 'GAIN_XP'; statId: string; amount: number }
-  | { type: 'LOG_COMPLETION'; habitId: string }
+  | { type: 'LOG_COMPLETION'; entry: LogEntry }
   | { type: 'UPDATE_CHARACTER_NAME'; name: string }
+
+const empty: AppData = { version: 1, stats: [], habits: [], log: [], characterName: 'Adventurer' }
 
 function reducer(state: AppData, action: Action): AppData {
   switch (action.type) {
+    case 'LOAD_DATA':
+      return action.data
+
     case 'ADD_HABIT':
       return { ...state, habits: [...state.habits, action.habit] }
 
     case 'UPDATE_HABIT':
       return { ...state, habits: state.habits.map(h => h.id === action.habit.id ? action.habit : h) }
-
-    case 'ARCHIVE_HABIT':
-      return {
-        ...state,
-        habits: state.habits.map(h => h.id === action.id ? { ...h, archivedAt: new Date().toISOString() } : h),
-      }
 
     case 'DELETE_HABIT':
       return {
@@ -49,15 +52,8 @@ function reducer(state: AppData, action: Action): AppData {
       return { ...state, stats }
     }
 
-    case 'LOG_COMPLETION': {
-      const entry: LogEntry = {
-        id: uuid(),
-        habitId: action.habitId,
-        date: todayString(),
-        completedAt: new Date().toISOString(),
-      }
-      return { ...state, log: [...state.log, entry] }
-    }
+    case 'LOG_COMPLETION':
+      return { ...state, log: [...state.log, action.entry] }
 
     case 'UPDATE_CHARACTER_NAME':
       return { ...state, characterName: action.name }
@@ -67,28 +63,89 @@ function reducer(state: AppData, action: Action): AppData {
   }
 }
 
+// ── Context ────────────────────────────────────────────────────────────────
+
 interface GameContextValue {
   data: AppData
   dispatch: React.Dispatch<Action>
+  session: Session | null
+  appLoading: boolean
   xpQueue: XpGainEvent[]
   dequeueXp: () => void
   completeHabit: (habitId: string) => void
   isCompletedToday: (habitId: string) => boolean
   devMode: boolean
   setDevMode: (v: boolean) => void
+  signOut: () => Promise<void>
 }
 
 const GameContext = createContext<GameContextValue | null>(null)
 
 export function GameProvider({ children }: { children: ReactNode }) {
-  const [data, dispatch] = useReducer(reducer, undefined, loadData)
+  const [data, dispatch] = useReducer(reducer, empty)
+  const [session, setSession] = useState<Session | null>(null)
+  const [appLoading, setAppLoading] = useState(true)
   const [xpQueue, setXpQueue] = useState<XpGainEvent[]>([])
   const [devMode, setDevMode] = useState(false)
 
+  // ── Auth + initial data load ─────────────────────────────────────────────
+
   useEffect(() => {
-    const timer = setTimeout(() => saveData(data), 200)
-    return () => clearTimeout(timer)
-  }, [data])
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      if (session) {
+        loadUserData(session.user.id).then(d => {
+          dispatch({ type: 'LOAD_DATA', data: d })
+          setAppLoading(false)
+        })
+      } else {
+        setAppLoading(false)
+      }
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+      if (session) {
+        loadUserData(session.user.id).then(d => {
+          dispatch({ type: 'LOAD_DATA', data: d })
+          setAppLoading(false)
+        })
+      } else {
+        dispatch({ type: 'LOAD_DATA', data: empty })
+        setAppLoading(false)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // ── Wrapped dispatch — updates local state then syncs to Supabase ────────
+
+  const syncDispatch = useCallback(async (action: Action) => {
+    dispatch(action)
+    const userId = session?.user.id
+    if (!userId) return
+
+    switch (action.type) {
+      case 'ADD_HABIT':
+        await insertHabit(action.habit, userId)
+        break
+      case 'UPDATE_HABIT':
+        await updateHabit(action.habit, userId)
+        break
+      case 'DELETE_HABIT':
+        await deleteHabit(action.id, userId)
+        break
+      case 'UPDATE_STAT':
+        await upsertStat(action.stat, userId)
+        break
+      case 'UPDATE_CHARACTER_NAME':
+        await updateCharacterName(action.name, userId)
+        break
+    }
+  }, [session])
+
+  // ── Complete habit ───────────────────────────────────────────────────────
 
   const isCompletedToday = useCallback((habitId: string) => {
     const today = todayString()
@@ -101,7 +158,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const habit = data.habits.find(h => h.id === habitId)
     if (!habit) return
 
-    if (!devMode) dispatch({ type: 'LOG_COMPLETION', habitId })
+    const userId = session?.user.id
+    const entry: LogEntry = {
+      id: uuid(),
+      habitId,
+      date: todayString(),
+      completedAt: new Date().toISOString(),
+    }
+
+    if (!devMode) {
+      dispatch({ type: 'LOG_COMPLETION', entry })
+      if (userId) insertLog(entry, userId)
+    }
 
     const events: XpGainEvent[] = habit.linkedStatIds.map(statId => {
       const stat = data.stats.find(s => s.id === statId)!
@@ -109,19 +177,23 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const previousLevel = stat.level
       const newXp = previousXp + XP_PER_COMPLETION
       const newLevel = levelFromXp(newXp)
+      const updatedStat = { ...stat, xp: newXp, level: newLevel }
       dispatch({ type: 'GAIN_XP', statId, amount: XP_PER_COMPLETION })
+      if (userId) upsertStat(updatedStat, userId)
       return { statId, xpGained: XP_PER_COMPLETION, previousXp, previousLevel, newXp, newLevel, didLevelUp: newLevel > previousLevel }
     })
 
     setXpQueue(q => [...q, ...events])
-  }, [data.habits, data.stats, devMode, isCompletedToday])
+  }, [data.habits, data.stats, session, devMode, isCompletedToday])
 
-  const dequeueXp = useCallback(() => {
-    setXpQueue(q => q.slice(1))
+  const dequeueXp = useCallback(() => setXpQueue(q => q.slice(1)), [])
+
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut()
   }, [])
 
   return (
-    <GameContext.Provider value={{ data, dispatch, xpQueue, dequeueXp, completeHabit, isCompletedToday, devMode, setDevMode }}>
+    <GameContext.Provider value={{ data, dispatch: syncDispatch, session, appLoading, xpQueue, dequeueXp, completeHabit, isCompletedToday, devMode, setDevMode, signOut }}>
       {children}
     </GameContext.Provider>
   )
