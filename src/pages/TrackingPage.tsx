@@ -1,3 +1,4 @@
+import { ListChecks } from '@phosphor-icons/react'
 import { useGame } from '../context/GameContext'
 import { HabitCard } from '../components/habits/HabitCard'
 import { isDueToday } from '../lib/date'
@@ -23,7 +24,7 @@ export function TrackingPage() {
 
       {todaysHabits.length === 0 && (
         <div className="text-center py-20 text-white/20">
-          <div className="text-5xl mb-4">📋</div>
+          <ListChecks size={48} weight="duotone" className="mx-auto mb-4" />
           <p className="text-lg">No habits scheduled for today.</p>
           <p className="text-sm mt-2">Head to <span className="text-white/40">Habits</span> to create some.</p>
         </div>

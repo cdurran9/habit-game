@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import type { Stat } from '../../types'
 import { xpProgressInCurrentLevel } from '../../lib/xp'
+import { GameIcon } from '../../lib/icons'
 
 interface Props {
   stat: Stat
@@ -16,7 +17,7 @@ export function StatMiniature({ stat, isAnimating }: Props) {
       className="flex items-center gap-2 px-2 py-1.5 rounded-lg"
       style={{ visibility: isAnimating ? 'hidden' : 'visible' }}
     >
-      <span className="text-lg leading-none">{stat.icon}</span>
+      <GameIcon name={stat.icon} size={18} weight="duotone" color={stat.color} />
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-center mb-0.5">
           <span className="text-white/70 text-xs font-semibold uppercase tracking-wide">{stat.abbreviation}</span>

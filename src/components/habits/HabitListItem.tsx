@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import type { Habit } from '../../types'
 import { useGame } from '../../context/GameContext'
+import { GameIcon } from '../../lib/icons'
 import { Button } from '../ui/Button'
 
 interface Props {
@@ -21,10 +22,10 @@ export function HabitListItem({ habit, onEdit }: Props) {
       className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/5"
     >
       <div
-        className="text-xl w-9 h-9 flex items-center justify-center rounded-lg flex-shrink-0"
+        className="w-9 h-9 flex items-center justify-center rounded-lg flex-shrink-0"
         style={{ backgroundColor: habit.color + '22' }}
       >
-        {habit.icon}
+        <GameIcon name={habit.icon} size={18} weight="duotone" color={habit.color} />
       </div>
 
       <div className="flex-1 min-w-0">
@@ -32,10 +33,13 @@ export function HabitListItem({ habit, onEdit }: Props) {
         {habit.description && (
           <div className="text-white/30 text-xs mt-0.5 truncate">{habit.description}</div>
         )}
-        <div className="flex gap-1.5 mt-1">
+        <div className="flex gap-2 mt-1">
           <span className="text-white/30 text-xs capitalize">{habit.frequency}</span>
           {linkedStats.map(s => (
-            <span key={s.id} className="text-xs" style={{ color: s.color }}>{s.icon} {s.abbreviation}</span>
+            <span key={s.id} className="flex items-center gap-1 text-xs" style={{ color: s.color }}>
+              <GameIcon name={s.icon} size={11} weight="duotone" color={s.color} />
+              {s.abbreviation}
+            </span>
           ))}
         </div>
       </div>

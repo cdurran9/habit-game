@@ -6,6 +6,7 @@ import { XpBar } from './XpBar'
 import { LevelNumber } from './LevelNumber'
 import { LevelUpBurst } from './LevelUpBurst'
 import { AnimatedCount } from './AnimatedCount'
+import { GameIcon } from '../../lib/icons'
 
 type Phase = 'idle' | 'showing' | 'done'
 
@@ -70,13 +71,14 @@ export function AnimationOrchestrator() {
               transition={{ type: 'spring', stiffness: 300, damping: 24 }}
             >
               <div className="flex items-center gap-4 mb-6">
-                <motion.span
-                  className="text-5xl"
+                <motion.div
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: stat.color + '22' }}
                   animate={currentEvent.didLevelUp ? { scale: [1, 1.4, 1], rotate: [0, -10, 10, 0] } : {}}
                   transition={{ delay: 0.2, duration: 0.5 }}
                 >
-                  {stat.icon}
-                </motion.span>
+                  <GameIcon name={stat.icon} size={32} weight="duotone" color={stat.color} />
+                </motion.div>
                 <div>
                   <div className="text-white/60 text-sm font-medium uppercase tracking-widest">{stat.abbreviation}</div>
                   <div className="text-white text-2xl font-bold">{stat.name}</div>

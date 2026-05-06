@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion'
+import { Check } from '@phosphor-icons/react'
 import type { Habit } from '../../types'
 import { useGame } from '../../context/GameContext'
+import { GameIcon } from '../../lib/icons'
 import { Button } from '../ui/Button'
 
 interface Props {
@@ -23,21 +25,19 @@ export function HabitCard({ habit }: Props) {
         borderColor: done ? 'rgba(255,255,255,0.05)' : habit.color + '44',
       }}
     >
-      {/* Icon */}
       <motion.div
         animate={done ? { scale: [1, 1.3, 1] } : {}}
-        className="text-2xl w-10 h-10 flex items-center justify-center rounded-lg flex-shrink-0"
+        className="w-10 h-10 flex items-center justify-center rounded-lg flex-shrink-0"
         style={{ backgroundColor: habit.color + '22' }}
       >
-        {done ? '✅' : habit.icon}
+        {done
+          ? <Check size={20} weight="bold" color={habit.color} />
+          : <GameIcon name={habit.icon} size={20} weight="duotone" color={habit.color} />
+        }
       </motion.div>
 
-      {/* Info */}
       <div className="flex-1 min-w-0">
-        <div
-          className="font-semibold text-sm"
-          style={{ color: done ? 'rgba(255,255,255,0.3)' : 'white' }}
-        >
+        <div className="font-semibold text-sm" style={{ color: done ? 'rgba(255,255,255,0.3)' : 'white' }}>
           {habit.name}
         </div>
         {habit.description && (
@@ -47,16 +47,16 @@ export function HabitCard({ habit }: Props) {
           {linkedStats.map(s => (
             <span
               key={s.id}
-              className="text-xs px-1.5 py-0.5 rounded font-medium"
+              className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded font-medium"
               style={{ backgroundColor: s.color + '33', color: s.color }}
             >
-              {s.icon} {s.abbreviation}
+              <GameIcon name={s.icon} size={11} weight="duotone" color={s.color} />
+              {s.abbreviation}
             </span>
           ))}
         </div>
       </div>
 
-      {/* Complete button */}
       <Button
         onClick={() => completeHabit(habit.id)}
         disabled={done}

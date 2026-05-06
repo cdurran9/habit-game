@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
+import { Sword } from '@phosphor-icons/react'
 import { useGame } from '../context/GameContext'
 import { HabitListItem } from '../components/habits/HabitListItem'
 import { HabitForm } from '../components/habits/HabitForm'
@@ -46,7 +47,7 @@ export function ManagementPage() {
 
       {activeHabits.length === 0 && (
         <div className="text-center py-20 text-white/20">
-          <div className="text-5xl mb-4">⚔️</div>
+          <Sword size={48} weight="duotone" className="mx-auto mb-4" />
           <p className="text-lg">No habits yet.</p>
           <p className="text-sm mt-2">Create your first quest to start earning XP.</p>
         </div>

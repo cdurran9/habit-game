@@ -5,6 +5,7 @@ import { uuid } from '../../lib/uuid'
 import { Button } from '../ui/Button'
 import { ColorSwatch } from '../ui/ColorSwatch'
 import { IconPicker } from '../ui/IconPicker'
+import { GameIcon } from '../../lib/icons'
 
 interface Props {
   initial?: Habit
@@ -26,7 +27,7 @@ export function HabitForm({ initial, onSave, onCancel }: Props) {
   const [frequency, setFrequency] = useState<HabitFrequency>(initial?.frequency ?? 'daily')
   const [linkedStatIds, setLinkedStatIds] = useState<string[]>(initial?.linkedStatIds ?? [])
   const [color, setColor] = useState(initial?.color ?? '#3b82f6')
-  const [icon, setIcon] = useState(initial?.icon ?? '🎯')
+  const [icon, setIcon] = useState(initial?.icon ?? 'Target')
 
   function toggleStat(id: string) {
     setLinkedStatIds(prev =>
@@ -113,7 +114,7 @@ export function HabitForm({ initial, onSave, onCancel }: Props) {
                 color: linkedStatIds.includes(stat.id) ? 'white' : 'rgba(255,255,255,0.5)',
               }}
             >
-              {stat.icon} {stat.abbreviation}
+              <GameIcon name={stat.icon} size={13} weight="duotone" /> {stat.abbreviation}
             </button>
           ))}
         </div>

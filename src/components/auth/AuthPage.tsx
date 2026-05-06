@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { Sword } from '@phosphor-icons/react'
 import { supabase } from '../../lib/supabase'
 
 export function AuthPage() {
@@ -63,7 +64,7 @@ export function AuthPage() {
         className="w-full max-w-sm"
       >
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">⚔️</div>
+          <Sword size={48} weight="duotone" color="rgba(255,255,255,0.8)" className="mx-auto mb-3" />
           <h1 className="text-white text-2xl font-bold">Habit Quest</h1>
           <p className="text-white/40 text-sm mt-1">Level up your life</p>
         </div>
