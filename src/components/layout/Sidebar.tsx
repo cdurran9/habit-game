@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { CalendarCheck, ListChecks, Gear, Sword, SignOut } from '@phosphor-icons/react'
+import { CalendarCheck, ListChecks, Gear, Sword, SignOut, Gift } from '@phosphor-icons/react'
 import { useGame } from '../../context/GameContext'
 import { StatMiniature } from './StatMiniature'
 
@@ -33,6 +33,9 @@ export function Sidebar() {
         </NavLink>
         <NavLink to="/habits" className={navClass}>
           <ListChecks size={16} weight="duotone" /> Habits
+        </NavLink>
+        <NavLink to="/rewards" className={navClass}>
+          <Gift size={16} weight="duotone" /> Rewards
         </NavLink>
         <NavLink to="/settings" className={navClass}>
           <Gear size={16} weight="duotone" /> Settings

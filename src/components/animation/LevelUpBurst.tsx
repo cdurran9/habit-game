@@ -1,25 +1,17 @@
 import { useEffect, useState } from 'react'
-import Particles, { initParticlesEngine } from '@tsparticles/react'
-import { loadSlim } from '@tsparticles/slim'
+import Particles from '@tsparticles/react'
+import { ensureParticlesEngine } from '../../lib/particlesEngine'
 
 interface Props {
   color: string
   active: boolean
 }
 
-let engineInitialized = false
-
 export function LevelUpBurst({ color, active }: Props) {
-  const [ready, setReady] = useState(engineInitialized)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    if (engineInitialized) { setReady(true); return }
-    initParticlesEngine(async engine => {
-      await loadSlim(engine)
-    }).then(() => {
-      engineInitialized = true
-      setReady(true)
-    })
+    ensureParticlesEngine(() => setReady(true))
   }, [])
 
   if (!ready || !active) return null

@@ -5,6 +5,7 @@ import { AuthPage } from './components/auth/AuthPage'
 import { TrackingPage } from './pages/TrackingPage'
 import { ManagementPage } from './pages/ManagementPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { RewardsPage } from './pages/RewardsPage'
 
 function AppRoutes() {
   const { session, appLoading } = useGame()
@@ -26,6 +27,7 @@ function AppRoutes() {
           <Route index element={<Navigate to="/track" replace />} />
           <Route path="/track" element={<TrackingPage />} />
           <Route path="/habits" element={<ManagementPage />} />
+          <Route path="/rewards" element={<RewardsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Routes>

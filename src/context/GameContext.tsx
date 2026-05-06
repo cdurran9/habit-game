@@ -1,8 +1,8 @@
 import { createContext, useContext, useReducer, useEffect, useState, useCallback, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import type { AppData, Habit, Stat, LogEntry, XpGainEvent } from '../types'
+import type { AppData, Habit, Stat, LogEntry, XpGainEvent, Reward } from '../types'
 import { supabase } from '../lib/supabase'
-import { loadUserData, upsertStat, insertHabit, updateHabit, deleteHabit, insertLog, updateCharacterName } from '../lib/db'
+import { loadUserData, upsertStat, insertHabit, updateHabit, deleteHabit, insertLog, updateCharacterName, upsertReward, deleteReward } from '../lib/db'
 import { levelFromXp } from '../lib/xp'
 import { uuid } from '../lib/uuid'
 import { XP_PER_COMPLETION } from '../constants/defaults'
@@ -19,8 +19,11 @@ type Action =
   | { type: 'GAIN_XP'; statId: string; amount: number }
   | { type: 'LOG_COMPLETION'; entry: LogEntry }
   | { type: 'UPDATE_CHARACTER_NAME'; name: string }
+  | { type: 'ADD_REWARD'; reward: Reward }
+  | { type: 'DELETE_REWARD'; id: string }
+  | { type: 'CLAIM_REWARD'; reward: Reward }
 
-const empty: AppData = { version: 1, stats: [], habits: [], log: [], characterName: 'Adventurer' }
+const empty: AppData = { version: 1, stats: [], habits: [], log: [], characterName: 'Adventurer', rewards: [] }
 
 function reducer(state: AppData, action: Action): AppData {
   switch (action.type) {
@@ -58,6 +61,15 @@ function reducer(state: AppData, action: Action): AppData {
     case 'UPDATE_CHARACTER_NAME':
       return { ...state, characterName: action.name }
 
+    case 'ADD_REWARD':
+      return { ...state, rewards: [...state.rewards, action.reward] }
+
+    case 'DELETE_REWARD':
+      return { ...state, rewards: state.rewards.filter(r => r.id !== action.id) }
+
+    case 'CLAIM_REWARD':
+      return { ...state, rewards: state.rewards.map(r => r.id === action.reward.id ? action.reward : r) }
+
     default:
       return state
   }
@@ -74,6 +86,7 @@ interface GameContextValue {
   dequeueXp: () => void
   completeHabit: (habitId: string) => void
   isCompletedToday: (habitId: string) => boolean
+  claimReward: (id: string) => void
   devMode: boolean
   setDevMode: (v: boolean) => void
   signOut: () => Promise<void>
@@ -146,6 +159,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
       case 'UPDATE_CHARACTER_NAME':
         await updateCharacterName(action.name, userId)
         break
+      case 'ADD_REWARD':
+      case 'CLAIM_REWARD':
+        await upsertReward(action.reward, userId)
+        break
+      case 'DELETE_REWARD':
+        await deleteReward(action.id, userId)
+        break
     }
   }, [session])
 
@@ -192,12 +212,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const dequeueXp = useCallback(() => setXpQueue(q => q.slice(1)), [])
 
+  const claimReward = useCallback((rewardId: string) => {
+    const reward = data.rewards.find(r => r.id === rewardId)
+    if (!reward || reward.claimedAt) return
+    const updated = { ...reward, claimedAt: new Date().toISOString() }
+    syncDispatch({ type: 'CLAIM_REWARD', reward: updated })
+    triggerShake()
+  }, [data.rewards, triggerShake, syncDispatch])
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut()
   }, [])
 
   return (
-    <GameContext.Provider value={{ data, dispatch: syncDispatch, session, appLoading, xpQueue, dequeueXp, completeHabit, isCompletedToday, devMode, setDevMode, signOut, shakeVersion, triggerShake }}>
+    <GameContext.Provider value={{ data, dispatch: syncDispatch, session, appLoading, xpQueue, dequeueXp, completeHabit, isCompletedToday, claimReward, devMode, setDevMode, signOut, shakeVersion, triggerShake }}>
       {children}
     </GameContext.Provider>
   )

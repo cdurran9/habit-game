@@ -1,5 +1,6 @@
+// Per-level cost: 10*(2n+1) — L1→2: 30, L2→3: 50, L3→4: 70, ...
 export function xpToReachLevel(level: number): number {
-  return level * (level - 1) * 50
+  return 10 * (level * level - 1)
 }
 
 export function levelFromXp(xp: number): number {

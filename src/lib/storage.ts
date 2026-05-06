@@ -11,6 +11,7 @@ function defaultData(): AppData {
     habits: [],
     log: [],
     characterName: 'Adventurer',
+    rewards: [],
   }
 }
 

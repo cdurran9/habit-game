@@ -36,6 +36,22 @@ export interface AppData {
   habits: Habit[]
   log: LogEntry[]
   characterName: string
+  rewards: Reward[]
+}
+
+export interface RewardPrerequisite {
+  type: 'stat_level' | 'total_level'
+  statId?: string
+  level: number
+}
+
+export interface Reward {
+  id: string
+  name: string
+  description: string
+  prerequisites: RewardPrerequisite[]
+  claimedAt?: string
+  createdAt: string
 }
 
 export interface XpGainEvent {

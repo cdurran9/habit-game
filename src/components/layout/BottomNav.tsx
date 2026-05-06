@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom'
-import { CalendarCheck, ListChecks, Gear } from '@phosphor-icons/react'
+import { CalendarCheck, ListChecks, Gear, Gift } from '@phosphor-icons/react'
 
 const tabs = [
   { to: '/track',    Icon: CalendarCheck, label: 'Track'    },
   { to: '/habits',   Icon: ListChecks,    label: 'Habits'   },
+  { to: '/rewards',  Icon: Gift,          label: 'Rewards'  },
   { to: '/settings', Icon: Gear,          label: 'Settings' },
 ]
 

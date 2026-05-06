@@ -4,6 +4,7 @@ import { Button } from '../components/ui/Button'
 import { ColorSwatch } from '../components/ui/ColorSwatch'
 import { IconPicker } from '../components/ui/IconPicker'
 import { GameIcon } from '../lib/icons'
+import { levelFromXp } from '../lib/xp'
 import type { Stat } from '../types'
 
 function StatEditor({ stat }: { stat: Stat }) {
@@ -62,6 +63,37 @@ function StatEditor({ stat }: { stat: Stat }) {
   )
 }
 
+function DevXpSetter({ stat }: { stat: Stat }) {
+  const { dispatch } = useGame()
+  const [xpInput, setXpInput] = useState(String(stat.xp))
+  const preview = levelFromXp(Math.max(0, parseInt(xpInput) || 0))
+
+  function handleSet() {
+    const newXp = Math.max(0, parseInt(xpInput) || 0)
+    dispatch({ type: 'UPDATE_STAT', stat: { ...stat, xp: newXp, level: levelFromXp(newXp) } })
+  }
+
+  return (
+    <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-yellow-400/5 border border-yellow-400/10">
+      <span className="text-yellow-300/70 text-xs font-mono w-8">{stat.abbreviation}</span>
+      <input
+        type="number"
+        min={0}
+        value={xpInput}
+        onChange={e => setXpInput(e.target.value)}
+        className="bg-black/30 border border-yellow-400/20 rounded px-2 py-1 text-yellow-100 text-xs w-24 focus:outline-none focus:border-yellow-400/50"
+      />
+      <span className="text-yellow-400/50 text-xs">→ Lv {preview}</span>
+      <button
+        onClick={handleSet}
+        className="ml-auto text-yellow-400 text-xs font-semibold hover:text-yellow-200 transition-colors"
+      >
+        Set
+      </button>
+    </div>
+  )
+}
+
 export function SettingsPage() {
   const { data, dispatch, devMode, setDevMode } = useGame()
   const [characterName, setCharacterName] = useState(data.characterName)
@@ -102,6 +134,17 @@ export function SettingsPage() {
           </span>
         </label>
       </section>
+
+      {devMode && (
+        <section className="mb-8">
+          <h2 className="text-yellow-400/50 text-xs font-semibold uppercase tracking-wider mb-3">Dev — Set XP</h2>
+          <div className="flex flex-col gap-2">
+            {[...data.stats].sort((a, b) => a.order - b.order).map(stat => (
+              <DevXpSetter key={stat.id} stat={stat} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section>
         <h2 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Stats</h2>
